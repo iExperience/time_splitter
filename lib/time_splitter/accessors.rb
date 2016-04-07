@@ -44,9 +44,18 @@ module TimeSplitter
           self.send("#{attr}=", self.send("#{attr}_or_new").change(year: date.year, month: date.month, day: date.day))
         end
 
-        define_method("#{attr}_hour=") do |hour|
-          return unless hour.present?
-          self.send("#{attr}=", self.send("#{attr}_or_new").change(hour: hour, min: self.send("#{attr}_or_new").min))
+        define_method("#{attr}_hour=") do |hour_string|
+          return unless hour_string.present?
+
+          if hour_string.is_a?(Time)
+            hour_time = hour_string
+          else
+            hour_time = Time.strptime(hour_string.to_s, "%H")
+          end
+
+          hour_time = self.send("#{attr}_correct_for_offset", hour_time, "%H")
+          self.send("#{attr}=", self.send("#{attr}_or_new")
+              .change(hour: hour_time.hour, min: self.send("#{attr}_or_new").min))
         end
 
         define_method("#{attr}_min=") do |min|
@@ -56,14 +65,18 @@ module TimeSplitter
 
         define_method("#{attr}_time=") do |time|
           return unless time.present?
+          return if time.is_a?(Date)
 
-          unless time.is_a?(Date) || time.is_a?(Time)
+          unless time.is_a?(Time)
             if options[:time_format]
               time = Time.strptime(time, options[:time_format])
             else
               time = Time.parse(time)
             end
           end
+
+          time = self.send("#{attr}_correct_for_offset", time, options[:time_format] || "%H:%M")
+
           self.send("#{attr}=", self.send("#{attr}_or_new").change(hour: time.hour, min: time.min))
         end
 
@@ -96,6 +109,14 @@ module TimeSplitter
         define_method("#{attr}_time") do
           time = self.send(attr)
           time && options[:time_format] ? time.strftime(options[:time_format]) : time
+        end
+
+        # If input time has a zone with an offset from UTC, this method creates a time object
+        # with the correct offset. Then converts that time to UTC.
+        define_method("#{attr}_correct_for_offset") do |time, format|
+          return time unless options[:input_time_utc_offset]
+          time = Time.strptime(time.strftime("#{format} #{options[:input_time_utc_offset]}"), "#{format} %z")
+            .in_time_zone("UTC")
         end
       end
     end

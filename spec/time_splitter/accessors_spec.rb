@@ -138,18 +138,41 @@ describe TimeSplitter::Accessors do
       end
 
       describe "#starts_at_hour" do
-        it "returns nil" do
-          expect(model.starts_at_hour).to be_nil
-        end
+        context "Time stored in and default to UTC" do
+          context "no offset present" do
+            it "returns nil" do
+              expect(model.starts_at_hour).to be_nil
+            end
 
-        it "sets the hour of starts_at" do
-          model.starts_at_hour = 11
-          expect(model.starts_at).to eq Time.new(0, 1, 1, 11, 0, 0, '+00:00')
-        end
+            it "sets the hour of starts_at" do
+              model.starts_at_hour = 11
+              expect(model.starts_at).to eq Time.new(0, 1, 1, 11, 0, 0, '+00:00')
+            end
 
-        it "is nil if the string is empty" do
-          model.starts_at_hour = ""
-          expect(model.starts_at).to be_nil
+            it "is nil if the string is empty" do
+              model.starts_at_hour = ""
+              expect(model.starts_at).to be_nil
+            end
+          end
+
+          context "offset present" do
+            before { Model.split_accessor :starts_at,
+              input_time_utc_offset: "+02:00" }
+
+            it "returns nil" do
+              expect(model.starts_at_hour).to be_nil
+            end
+
+            it "sets the hour of starts_at" do
+              model.starts_at_hour = 11
+              expect(model.starts_at).to eq Time.new(0, 1, 1, 9, 0, 0, '+00:00')
+            end
+
+            it "is nil if the string is empty" do
+              model.starts_at_hour = ""
+              expect(model.starts_at).to be_nil
+            end
+          end
         end
       end
 
@@ -170,23 +193,50 @@ describe TimeSplitter::Accessors do
       end
 
       describe '#starts_at_time' do
-        it 'returns nil' do
-          expect(model.starts_at_time).to be_nil
-        end
+        context "Time stored in and default to UTC" do
+          context "no offset present" do
+            it 'returns nil' do
+              expect(model.starts_at_time).to be_nil
+            end
 
-        it "lets you modify the time format" do
-          Model.split_accessor(:starts_at, time_format: "%I:%M%p")
-          expect(model.starts_at_time).to be_nil
-        end
+            it "lets you modify the time format" do
+              Model.split_accessor(:starts_at, time_format: "%I:%M%p")
+              expect(model.starts_at_time).to be_nil
+            end
 
-        it 'sets the hour and minute of #starts_at' do
-          model.starts_at_time = '08:33'
-          expect(model.starts_at).to eq Time.new(0, 1, 1, 8, 33, 0, '+00:00')
-        end
+            it 'sets the hour and minute of #starts_at' do
+              model.starts_at_time = '08:33'
+              expect(model.starts_at).to eq Time.new(0, 1, 1, 8, 33, 0, '+00:00')
+            end
 
-        it 'is nil if the string is empty' do
-          model.starts_at_time = ''
-          expect(model.starts_at).to be_nil
+            it 'is nil if the string is empty' do
+              model.starts_at_time = ''
+              expect(model.starts_at).to be_nil
+            end
+          end
+          context "offset present" do
+            before { Model.split_accessor :starts_at, time_format: "%H:%M",
+              input_time_utc_offset: "+02:00" }
+
+            it 'returns nil' do
+              expect(model.starts_at_time).to be_nil
+            end
+
+            it "lets you modify the time format" do
+              Model.split_accessor(:starts_at, time_format: "%H:%M")
+              expect(model.starts_at_time).to be_nil
+            end
+
+            it 'sets the hour and minute of #starts_at' do
+              model.starts_at_time = '08:33'
+              expect(model.starts_at).to eq Time.new(0, 1, 1, 6, 33, 0, '+00:00')
+            end
+
+            it 'is nil if the string is empty' do
+              model.starts_at_time = ''
+              expect(model.starts_at).to be_nil
+            end
+          end
         end
       end
     end
@@ -221,18 +271,39 @@ describe TimeSplitter::Accessors do
       end
 
       describe "#starts_at_hour" do
-        it "returns the hour" do
-          expect(model.starts_at_hour).to eq 13
-        end
+        context "Time stored in and default to UTC" do
+          context "no offset present" do
+            it "returns the hour" do
+              expect(model.starts_at_hour).to eq 13
+            end
 
-        it "sets the hour of starts_at" do
-          model.starts_at_hour = 11
-          expect(model.starts_at).to eq Time.new(2222, 12, 22, 11, 44, 0, '+00:00')
-        end
+            it "sets the hour of starts_at" do
+              model.starts_at_hour = 11
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 11, 44, 0, '+00:00')
+            end
 
-        it "uses the default if the string is empty" do
-          model.starts_at_hour = ""
-          expect(model.starts_at).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            it "uses the default if the string is empty" do
+              model.starts_at_hour = ""
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            end
+          end
+          context "offset present" do
+            before { Model.split_accessor :starts_at, time_format: "%H:%M",
+              input_time_utc_offset: "+02:00" }
+            it "returns the hour" do
+              expect(model.starts_at_hour).to eq 13
+            end
+
+            it "sets the hour of starts_at" do
+              model.starts_at_hour = 11
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 9, 44, 0, '+00:00')
+            end
+
+            it "uses the default if the string is empty" do
+              model.starts_at_hour = ""
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            end
+          end
         end
       end
 
@@ -253,29 +324,67 @@ describe TimeSplitter::Accessors do
       end
 
       describe '#starts_at_time' do
-        it 'returns the time' do
-          expect(model.starts_at_time).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
-        end
+        context "Time stored in and default to UTC" do
+          context "no offset present" do
+            it 'returns the time' do
+              expect(model.starts_at_time).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            end
 
-        it "lets you modify the time format" do
-          Model.split_accessor(:starts_at, time_format: "%I:%M%p")
-          expect(model.starts_at_time).to eq "01:44PM"
-        end
+            it "lets you modify the time format" do
+              Model.split_accessor(:starts_at, time_format: "%I:%M%p")
+              expect(model.starts_at_time).to eq "01:44PM"
+            end
 
-        it "can set from a string when format is modified" do
-          Model.split_accessor(:starts_at, time_format: "%k-%M")
-          model.starts_at_time = "23-59"
-          expect(model.starts_at).to eq Time.new(2222, 12, 22, 23, 59, 0, '+00:00')
-        end
+            it "can set from a string when format is modified" do
+              Model.split_accessor(:starts_at, time_format: "%k-%M")
+              model.starts_at_time = "23-59"
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 23, 59, 0, '+00:00')
+            end
 
-        it 'sets the hour and minute of #starts_at' do
-          model.starts_at_time = '08:33'
-          expect(model.starts_at).to eq Time.new(2222, 12, 22, 8, 33, 0, '+00:00')
-        end
+            it 'sets the hour and minute of #starts_at' do
+              model.starts_at_time = '08:33'
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 8, 33, 0, '+00:00')
+            end
 
-        it 'uses the default if the string is empty' do
-          model.starts_at_time = ''
-          expect(model.starts_at).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            it 'uses the default if the string is empty' do
+              model.starts_at_time = ''
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            end
+          end
+
+          context "offset present" do
+            it 'returns the time' do
+              Model.split_accessor(:starts_at, input_time_utc_offset: "+02:00")
+              expect(model.starts_at_time).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            end
+
+            it "lets you modify the time format" do
+              Model.split_accessor(:starts_at, time_format: "%I:%M%p",
+                input_time_utc_offset: "+02:00")
+              expect(model.starts_at_time).to eq "01:44PM"
+            end
+
+            it "can set from a string when format is modified" do
+              Model.split_accessor(:starts_at, time_format: "%k-%M",
+                input_time_utc_offset: "+02:00")
+              model.starts_at_time = "23-59"
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 21, 59, 0, '+00:00')
+            end
+
+            it 'sets the hour and minute of #starts_at' do
+              Model.split_accessor(:starts_at, time_format: "%H:%M",
+                input_time_utc_offset: "+02:00")
+              model.starts_at_time = '08:33'
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 6, 33, 0, '+00:00')
+            end
+
+            it 'uses the default if the string is empty' do
+              Model.split_accessor(:starts_at,
+                input_time_utc_offset: "+02:00")
+              model.starts_at_time = ''
+              expect(model.starts_at).to eq Time.new(2222, 12, 22, 13, 44, 0, '+00:00')
+            end
+          end
         end
       end
     end
